@@ -4,6 +4,7 @@ import { MongoClient } from "mongodb";
 import dotenv from "dotenv"
 import cors from 'cors';
 import Joi from "joi";
+import bcrypt from "bcrypt";
 
 const signUpSchema = Joi.object({
     nome: Joi.string().required(),
@@ -15,6 +16,9 @@ export async function signUp(req,res) {
     console.log("entrou na rota")
     const {nome, email, senha} = req.body
     console.log("passou1")
+
+    const password = senha
+    const passCrypt = bcrypt.hashSync(password, 10)
 
     const validation = signUpSchema.validate({nome, email, senha}, {abortEarly: "False"})
     console.log("passou2")
