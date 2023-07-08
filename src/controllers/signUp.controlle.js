@@ -1,41 +1,60 @@
-
-import express from "express"
-import { MongoClient } from "mongodb";
-import dotenv from "dotenv"
-import cors from 'cors';
-import Joi from "joi";
+import connectDB from "../database/db.js";
 import bcrypt from "bcrypt";
+import Joi from "joi";
 
 const signUpSchema = Joi.object({
-    nome: Joi.string().required(),
-    email: Joi.string().email().required(),
-    senha: Joi.string().required(),
+  nome: Joi.string().required(),
+  email: Joi.string().email().required(),
+  senha: Joi.string().required(),
+  confirmarSenha: Joi.string().required(),
 });
 
-export async function signUp(req,res) {
-    console.log("entrou na rota")
-    const {nome, email, senha} = req.body
-    console.log("passou1")
+export async function signUp(req, res) {
+  console.log("entrou na rota");
+  const { nome, email, senha, confirmarSenha } = req.body;
 
-    const password = senha
-    const passCrypt = bcrypt.hashSync(password, 10)
+  try {
+    const db = await connectDB();
+    console.log("passou1");
 
-    const validation = signUpSchema.validate({nome, email, senha}, {abortEarly: "False"})
-    console.log("passou2")
+    const validation = signUpSchema.validate(
+      { nome, email, senha, confirmarSenha },
+      { abortEarly: false }
+    );
+    
+    console.log("passou2");
     if (validation.error) {
-        console.log("erro1")
-        const errors = validation.error.details.map((detail) => detail.message)
-        return res.status(422).send(errors);
+      console.log("erro1");
+      const errors = validation.error.details.map((detail) => detail.message);
+      return res.status(422).send(errors);
     }
 
     if (senha.length < 3) {
-        console.log("erro2")
-        return res.status(422).send("A senha precisa ter mais de três caracteres.")
+      console.log("erro2");
+      return res.status(422).send("A senha precisa ter mais de três caracteres.");
     }
 
-    console.log("passoutudo")
+    if (senha !== confirmarSenha) {
+      console.log("erro 3");
+      return res.status(422).send("A senha deve ser igual à confirmação de senha.");
+    }
 
-    // Caso já exista um usuário com este e-mail cadastrado, a requisição deve retornar status code 409 (Conflict) e o front-end deve mostrar uma mensagem explicando o erro. (Use alert)
+    const users = await db.collection("users").find({ email: email }).toArray();
+    if (users.length > 0) {
+      return res.status(409).send("Usuário já cadastrado!");
+    }
 
-    res.sendStatus(201)
+    const passCrypt = bcrypt.hashSync(senha, 10);
+    const newUser = { nome, email, passCrypt };
+
+    const promise = await db.collection("users").insertOne(newUser).then(() => {
+        return res.status(201).send("Usuário criado!")
+    }).catch(err => {
+        return res.status(500).send(err.message)
+    })
+    
+  } catch (error) {
+    console.error("Erro ao conectar ao banco de dados:", error);
+    return res.status(500).send("Erro ao conectar ao banco de dados.");
+  }
 }
