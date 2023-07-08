@@ -4,6 +4,7 @@ import dotenv from "dotenv"
 import cors from 'cors';
 import Joi from "joi";
 import { signUp } from "./controllers/signUp.controlle.js";
+import bcrypt from "bcrypt"
 
 
 const app = express();
@@ -32,14 +33,38 @@ mongoClient.connect().then(() => db = mongoClient.db()).catch((err) => console.l
 
 app.post("/cadastro", signUp)
 
-app.post("/login", (req,res) => {
+app.post("/login", async (req,res) => {
     const {email, senha} = req.body
+
+    console.log("entrou")
 
     const validation = loginSchema.validate({email, senha}, {abortEarly: "False"})
     if (validation.error) {
+        console.log("erro 1")
         const errors = validation.error.details.map((detail) => detail.message)
         return res.status(422).send(errors);
     }
+
+    const users = await db.collection("users").findOne({ email: email});
+    if (!users) {
+            return res.status(404).send("Usuário não cadastrado!");
+        }
+
+    const unHash = bcrypt.compareSync(senha, users.passCrypt)
+
+    if (unHash === false ) {
+        return res.status(401).send("Senha Incorreta!")
+    }
+      
+    
+
+    
+      
+
+      console.log("passou tudo no login")
+    
+
+
 
     ///Caso o e-mail de login não esteja cadastrado, a requisição deve retornar status code 404 (Not Found) e o front-end deve mostrar uma mensagem explicando o erro. (Use alert)
     ///Caso a senha enviada não seja correspondente com a que está cadastrada, a requisição deve retornar status code 401 (Unauthorized) e o front-end deve mostrar uma mensagem explicando o erro. (Use alert)
