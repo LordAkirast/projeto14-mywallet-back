@@ -47,12 +47,14 @@ app.post("/login", async (req,res) => {
 
     const users = await db.collection("users").findOne({ email: email});
     if (!users) {
+        console.log("erro 2")
             return res.status(404).send("Usuário não cadastrado!");
         }
 
     const unHash = bcrypt.compareSync(senha, users.passCrypt)
 
     if (unHash === false ) {
+        console.log("erro 3")
         return res.status(401).send("Senha Incorreta!")
     }
       
@@ -62,13 +64,6 @@ app.post("/login", async (req,res) => {
       
 
       console.log("passou tudo no login")
-    
-
-
-
-    ///Caso o e-mail de login não esteja cadastrado, a requisição deve retornar status code 404 (Not Found) e o front-end deve mostrar uma mensagem explicando o erro. (Use alert)
-    ///Caso a senha enviada não seja correspondente com a que está cadastrada, a requisição deve retornar status code 401 (Unauthorized) e o front-end deve mostrar uma mensagem explicando o erro. (Use alert)
-
 
     res.sendStatus(200) ///aqui deve retornar um token e o usuário tem de ser redirecionado para a rota /home
 
