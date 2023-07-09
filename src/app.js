@@ -72,7 +72,7 @@ app.post("/login", async (req,res) => {
 
 app.post("/nova-transacao/:tipo", (req,res) => {
     const {tipo} = req.params
-    const {valor, descricao, token} = req.body
+    let {valor, descricao, token, diaMesFormatado} = req.body
 
     console.log("entrou")
 
@@ -91,13 +91,17 @@ app.post("/nova-transacao/:tipo", (req,res) => {
             console.log("Erro 3")
             return res.status(422).send("O valor de entrada deve ser positivo.")
         }
-
-        if (isNaN(parseFloat(valor))) {
-            console.log("Erro 4")
-            return res.status(422).send("O valor deve ser um número válido. Ex: 40.0");
+        valor = Number(valor)
+        valor = parseFloat(valor.toFixed(2))
+        console.log(typeof(valor) + valor)
+        if (isNaN(valor) === true) {
+            console.log("Erro 4");
+            console.log(typeof valor + valor)
+            return res.status(422).send("O valor deve ser um número válido. Ex: 40.00");
           }
+          
 
-          const novaTransacao = {valor, descricao, metodo: "entrada", token}
+          const novaTransacao = {valor, descricao, metodo: "entrada", diaMesFormatado, token}
 
           const promise = db.collection("transacoes").insertOne(novaTransacao).then(() => {
             return res.sendStatus(201)
@@ -108,7 +112,7 @@ app.post("/nova-transacao/:tipo", (req,res) => {
     } else {
         if (valor < 0) {
             console.log("Erro 5")
-            return res.status(422).send("O valor de entrada deve ser positivo.")
+            return res.status(422).send("O valor de saida deve ser positivo.")
         }
 
         if (isNaN(parseFloat(valor))) {
@@ -116,7 +120,7 @@ app.post("/nova-transacao/:tipo", (req,res) => {
             return res.status(422).send("O valor deve ser um número válido. Ex: 40.0");
           }
 
-          const novaTransacao = {valor, descricao, metodo: "saida", token}
+          const novaTransacao = {valor, descricao, metodo: "saida",diaMesFormatado, token}
 
           const promise = db.collection("transacoes").insertOne(novaTransacao).then(() => {
             return res.sendStatus(201)
@@ -131,11 +135,18 @@ app.post("/nova-transacao/:tipo", (req,res) => {
 
 app.get("/home", (req,res) => {
 
+    console.log("entrou no /home.")
+
+    const transacoes = db.collection("transacoes").find().toArray().then(transacoes => {
+        return res.send(transacoes)
+    }).catch(err => {
+        return res.status(500).send(err.message)
+    })
 
 
-// - [ ]  Essa rota deve receber o `token` de autorização do usuário. Caso não receba, deve enviar o status code `401 (Unauthorized)`.
+
+
 // - [ ]  Caso o limite de espaço da tela não seja suficiente para visualizar tudo, deve haver um *scroll* apenas nas transações, o saldo deve ser mantido fixo onde está.
-// - [ ]  O nome do usuário deve ser exibido no topo da tela.
 // - [ ]  As entradas e saídas devem aparecer de acordo com a data, sendo a mais recente a primeira da lista.
 // - [ ]  Os valores de entradas devem ser exibidos em verde e os valores de saída, em vermelho.
 // - [ ]  O saldo final do usuário deve ser exibido, levando em consideração a soma de todas as entradas e saídas.
