@@ -65,22 +65,67 @@ app.post("/login", async (req,res) => {
 
       console.log("passou tudo no login")
 
-    res.sendStatus(200) ///aqui deve retornar um token e o usuário tem de ser redirecionado para a rota /home
+    res.status(200).send(users.nome) ///aqui deve retornar um token e o usuário tem de ser redirecionado para a rota /home
 
     ///utilize localstorage para manter o usuário logado
 })
 
 app.post("/nova-transacao/:tipo", (req,res) => {
     const {tipo} = req.params
+    const {valor, descricao, token} = req.body
 
-// - [ ]  Essa rota deve receber o *token* de autorização do usuário. Caso não receba, deve enviar o status `401 (Unauthorized)`.
-// - [ ]  O tipo de dado do valor deve ser flutuante (ex: 40.5) e positivo.
-// - [ ]  Todos os campos são obrigatórios. Faça validações de acordo com a necessidade no front-end e no back-end que garantam que todos os dados estejam presentes.
-// - [ ]  Caso algum dado seja enviado à API em formato inválido, a resposta à requisição deve possuir o status `422 (Unprocessable Entity)` e o front-end deve exibir uma mensagem explicativa ao usuário. (Use `alert`)
-// - [ ]  Em caso de sucesso, o usuário deve ser redirecionado para a página home.
+    console.log("entrou")
+
+    if(!valor || !descricao) {
+        console.log("Erro 1")
+        return res.status(422).send("O valor ou a descrição não foram preenchidos corretamente.")
+    }
+
+    if (!token) {
+        console.log("Erro 2")
+        return res.status(401).send("UNAUTHORIZED! TOKEN INVÁLIDO!")
+    }
+
+    if (tipo === 'entrada') {
+        if (valor < 0) {
+            console.log("Erro 3")
+            return res.status(422).send("O valor de entrada deve ser positivo.")
+        }
+
+        if (isNaN(parseFloat(valor))) {
+            console.log("Erro 4")
+            return res.status(422).send("O valor deve ser um número válido. Ex: 40.0");
+          }
+
+          const novaTransacao = {valor, descricao, metodo: "entrada", token}
+
+          const promise = db.collection("transacoes").insertOne(novaTransacao).then(() => {
+            return res.sendStatus(201)
+          }).catch(err => {
+            return res.status(500).send(err.message)
+          })
+
+    } else {
+        if (valor < 0) {
+            console.log("Erro 5")
+            return res.status(422).send("O valor de entrada deve ser positivo.")
+        }
+
+        if (isNaN(parseFloat(valor))) {
+            console.log("Erro 6")
+            return res.status(422).send("O valor deve ser um número válido. Ex: 40.0");
+          }
+
+          const novaTransacao = {valor, descricao, metodo: "saida", token}
+
+          const promise = db.collection("transacoes").insertOne(novaTransacao).then(() => {
+            return res.sendStatus(201)
+          }).catch(err => {
+            return res.status(500).send(err.message)
+          })
 
 
-
+    }
 })
 
 
