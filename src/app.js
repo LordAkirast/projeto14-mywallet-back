@@ -130,6 +130,7 @@ app.post("/nova-transacao/:tipo", (req,res) => {
 
 
     }
+    console.log("fez a transação")
 })
 
 
@@ -153,4 +154,8 @@ app.get("/home", (req,res) => {
 // - [ ]  Se o saldo for positivo, deve estar em verde. Se for negativo, deve estar em vermelho.
 
 })
-app.listen(5000, () => console.log("Servidor ligado!"))
+
+const port = process.env.PORT || 5000
+app.listen(port, () => {
+	console.log(`Servidor rodando na porta ${port}`)
+})
